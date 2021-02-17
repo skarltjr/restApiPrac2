@@ -2,6 +2,7 @@ package com.example.demo.events;
 
 import com.example.demo.accounts.Account;
 import com.example.demo.accounts.CurrentUser;
+import com.example.demo.commons.ErrorResource;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -59,15 +61,22 @@ public class EventController {
         return ResponseEntity.ok(eventResource);
     }
 
+
+   /* @InitBinder("eventDto")
+    public void initBinder(WebDataBinder webDataBinder) {
+        webDataBinder.addValidators(eventValidator);
+    }*/
     @PostMapping
     public ResponseEntity createEvent(@CurrentUser Account account,
                                       @RequestBody @Valid EventDto eventDto, Errors errors) {
         if (errors.hasErrors()) { // 어노테이션 에러검증
-            return ResponseEntity.badRequest().body(errors);
+            EntityModel<Errors> error1 = ErrorResource.modelOf(errors);
+            return ResponseEntity.badRequest().body(error1);
         }
         eventValidator.validate(eventDto, errors);
         if (errors.hasErrors()) {
-            return ResponseEntity.badRequest().body(errors);
+            EntityModel<Errors> error2 = ErrorResource.modelOf(errors);
+            return ResponseEntity.badRequest().body(error2);
         }
         Event event = modelMapper.map(eventDto, Event.class);
         event.update();
@@ -89,12 +98,14 @@ public class EventController {
         if (byId.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        if (errors.hasErrors()) {
-            return ResponseEntity.badRequest().body(errors);
+        if (errors.hasErrors()) { // 어노테이션 에러검증
+            EntityModel<Errors> error1 = ErrorResource.modelOf(errors);
+            return ResponseEntity.badRequest().body(error1);
         }
         eventValidator.validate(eventDto, errors);
         if (errors.hasErrors()) {
-            return ResponseEntity.badRequest().body(errors);
+            EntityModel<Errors> error2 = ErrorResource.modelOf(errors);
+            return ResponseEntity.badRequest().body(error2);
         }
         Event event = byId.get();
         if (!event.getManager().equals(account)) {
